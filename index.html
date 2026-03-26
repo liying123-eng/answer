@@ -3,373 +3,713 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>答案之书</title>
+    <title>情绪内耗类型定位器</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #fff;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
+            color: #333;
+            padding: 20px;
         }
 
         .container {
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 40px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
             background: #fff;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .title {
+        h1 {
             text-align: center;
-            margin-bottom: 30px;
-            z-index: 10;
-        }
-
-        .title h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(45deg, #ffd700, #ff6b6b, #c44569);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #667eea;
+            font-size: 1.6rem;
             margin-bottom: 10px;
         }
 
-        .title p {
-            color: rgba(255,255,255,0.6);
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar {
+            background: #eee;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .question-card {
+            margin-bottom: 20px;
+        }
+
+        .question-num {
+            color: #667eea;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
             font-size: 0.95rem;
         }
 
-        .question-area {
-            width: 100%;
-            margin-bottom: 40px;
-            z-index: 10;
+        .option:hover {
+            background: #eef;
+            border-color: #667eea;
         }
 
-        .question-input {
-            width: 100%;
-            padding: 15px 20px;
-            border: 2px solid rgba(255,215,0,0.3);
-            border-radius: 15px;
-            background: rgba(255,255,255,0.05);
+        .option.selected {
+            background: #667eea;
             color: #fff;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
             font-size: 1rem;
-            text-align: center;
-            outline: none;
-        }
-
-        .question-input::placeholder {
-            color: rgba(255,255,255,0.4);
-        }
-
-        .touch-area {
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,215,0,0.2), rgba(196,69,105,0.3));
-            border: 3px solid rgba(255,215,0,0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             cursor: pointer;
-            position: relative;
-            z-index: 10;
-            touch-action: none;
+            display: block;
+            margin: 30px auto 0;
+            transition: transform 0.2s;
         }
 
-        .touch-area.pressing {
-            transform: scale(0.95);
-            border-color: #ffd700;
-            box-shadow: 0 0 50px rgba(255,215,0,0.4);
+        .btn:hover {
+            transform: scale(1.05);
         }
 
-        .energy-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid rgba(255,215,0,0.5);
-            opacity: 0;
-        }
+        .hidden { display: none; }
 
-        .touch-area.pressing .energy-ring {
-            animation: pulse 1s infinite;
-        }
+        /* 结果页样式 */
+        .result-screen { text-align: center; }
 
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-
-        .center-icon {
-            font-size: 4rem;
+        .result-title {
+            font-size: 1.4rem;
+            color: #667eea;
             margin-bottom: 15px;
         }
 
-        .touch-text {
-            font-size: 1.1rem;
-            color: rgba(255,255,255,0.8);
-        }
-
-        .touch-hint {
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.5);
-            margin-top: 10px;
-        }
-
-        .answer-display {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.5s;
-        }
-
-        .answer-display.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .answer-book {
-            width: 300px;
-            height: 400px;
-            background: linear-gradient(135deg, #2d1b4e 0%, #1a1a2e 100%);
-            border-radius: 10px;
-            border: 3px solid #ffd700;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            text-align: center;
-            box-shadow: 0 0 50px rgba(255,215,0,0.3);
-        }
-
-        .answer-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-
-        .answer-text {
-            font-size: 1.5rem;
-            color: #ffd700;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .answer-meaning {
-            font-size: 1rem;
-            color: rgba(255,255,255,0.7);
-            line-height: 1.8;
-        }
-
-        .close-btn {
-            margin-top: 30px;
-            padding: 12px 40px;
-            background: linear-gradient(45deg, #ffd700, #ff6b6b);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
+        .result-type {
+            font-size: 1.8rem;
+            color: #764ba2;
+            margin-bottom: 10px;
             font-weight: bold;
-            cursor: pointer;
         }
 
-        .hint {
-            margin-top: 40px;
-            text-align: center;
-            color: rgba(255,255,255,0.5);
+        .result-level {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .level-high { background: #ff6b6b; color: #fff; }
+        .level-mid { background: #ffd93d; color: #333; }
+        .level-low { background: #6bcf7f; color: #fff; }
+
+        .result-desc {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .solution-box {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .solution-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .solution-item {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .solution-item::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .dimension-list {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .dimension-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dimension-item:last-child {
+            border-bottom: none;
+        }
+
+        .dimension-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .dimension-bar {
+            width: 100px;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .dimension-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+
+        .start-screen { text-align: center; }
+
+        .intro-text {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .pain-point-list {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .pain-point-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .pain-point-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .pain-point-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .share-hint {
+            color: #888;
             font-size: 0.85rem;
-            z-index: 10;
+            margin-top: 20px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="stars" id="stars"></div>
-
     <div class="container">
-        <div class="title">
-            <h1>📖 答案之书</h1>
-            <p>心中默念你的问题，长按获取答案</p>
+        <!-- 开始页 -->
+        <div class="start-screen" id="start-screen">
+            <h1>🧠 情绪内耗类型定位器</h1>
+            <p class="subtitle">不是告诉你"有没有内耗"，而是"为什么内耗"+"怎么解决"</p>
+            
+            <div class="intro-text">
+                <p style="margin-bottom: 15px;">每天很累但什么都没做？脑子里像有一台停不下来的跑步机？</p>
+                <p style="margin-bottom: 15px;"><strong>内耗不是性格缺陷，只是用错了方法。</strong></p>
+            </div>
+
+            <div class="pain-point-list">
+                <div class="pain-point-item">
+                    <span class="pain-point-icon">🎯</span>
+                    <span><strong>定位类型：</strong>完美主义/过度思考/人际关系/选择困难/反刍过去</span>
+                </div>
+                <div class="pain-point-item">
+                    <span class="pain-point-icon">📊</span>
+                    <span><strong>量化程度：</strong>轻度自我调节/中度系统方法/重度建议就医</span>
+                </div>
+                <div class="pain-point-item">
+                    <span class="pain-point-icon">💊</span>
+                    <span><strong>对症下药：</strong>不同内耗类型，解决方法完全不同</span>
+                </div>
+            </div>
+
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 20px;">20道题，5分钟，找到你的内耗根源</p>
+            
+            <button class="btn" onclick="startTest()">开始测试</button>
         </div>
 
-        <div class="question-area">
-            <input type="text" class="question-input" id="question" placeholder="在这里输入你的问题（可选）...">
+        <!-- 测试页 -->
+        <div class="hidden" id="quiz-screen">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 0%"></div>
+            </div>
+            <div class="question-card" id="question-area"></div>
         </div>
 
-        <div class="touch-area" id="touchArea">
-            <div class="energy-ring"></div>
-            <div class="center-icon">🔮</div>
-            <div class="touch-text">长按获取答案</div>
-            <div class="touch-hint">按住 3 秒</div>
-        </div>
-
-        <div class="hint">💫 肯定50% · 模棱两可30% · 负面20%</div>
-    </div>
-
-    <div class="answer-display" id="answerDisplay">
-        <div class="answer-book">
-            <div class="answer-icon" id="answerIcon">✨</div>
-            <div class="answer-text" id="answerText"></div>
-            <div class="answer-meaning" id="answerMeaning"></div>
-        </div>
-        <button class="close-btn" onclick="closeAnswer()">再问一次</button>
+        <!-- 结果页 -->
+        <div class="hidden result-screen" id="result-screen"></div>
     </div>
 
     <script>
-        // 答案库：肯定50% + 模棱两可30% + 负面20%
-        const answers = [
-            // ===== 肯定/积极 50%（20个）=====
-            { text: '是的', icon: '☀️', meaning: '时机已经成熟，勇敢去做吧。宇宙在支持你。', type: 'positive' },
-            { text: '大胆去做', icon: '🚀', meaning: '冒险是成长的必经之路。勇敢迈出那一步。', type: 'positive' },
-            { text: '机会难得', icon: '💎', meaning: '机不可失，时不再来。抓住眼前的机会。', type: 'positive' },
-            { text: '全力以赴', icon: '🔥', meaning: '投入你所有的热情，结果不会辜负你。', type: 'positive' },
-            { text: '相信自己', icon: '💪', meaning: '你比想象中更强大。答案就在你心中。', type: 'positive' },
-            { text: '马上行动', icon: '⏩', meaning: '拖延是失败的开始，现在就去做。', type: 'positive' },
-            { text: '会有惊喜', icon: '🎁', meaning: '意想不到的好事即将发生，保持期待。', type: 'positive' },
-            { text: '会有贵人', icon: '👼', meaning: '冥冥之中自有安排，会有人伸出援手。', type: 'positive' },
-            { text: '值得投资', icon: '💰', meaning: '时间、金钱或感情，这份投入会有回报。', type: 'positive' },
-            { text: '一帆风顺', icon: '⛵', meaning: '天时地利人和，这次会格外顺利。', type: 'positive' },
-            { text: '会有回报', icon: '🌾', meaning: '一分耕耘一分收获，你的努力不会白费。', type: 'positive' },
-            { text: '尝试新事物', icon: '🌈', meaning: '走出舒适区，你会发现新的可能。', type: 'positive' },
-            { text: '展示自己', icon: '🦚', meaning: '是金子就要发光，让世界看到你的才华。', type: 'positive' },
-            { text: '坚持己见', icon: '🗿', meaning: '你的判断是正确的，不要被他人左右。', type: 'positive' },
-            { text: '重新开始', icon: '🌅', meaning: '结束也是开始，放下过去，迎接新生。', type: 'positive' },
-            { text: '就是现在', icon: '⚡', meaning: '最好的时机就是当下，不要等待完美时刻。', type: 'positive' },
-            { text: '放手一搏', icon: '🎲', meaning: '人生能有几回搏，不试试怎么知道不行。', type: 'positive' },
-            { text: '勇往直前', icon: '🦁', meaning: '勇气不是没有恐惧，而是带着恐惧依然前行。', type: 'positive' },
-            { text: '梦想成真', icon: '✨', meaning: '你的愿望正在显化，保持信念。', type: 'positive' },
-            { text: '趁热打铁', icon: '🔨', meaning: ' momentum 正好，一鼓作气完成它。', type: 'positive' },
-            
-            // ===== 模棱两可/哲理 30%（12个）=====
-            { text: '一切都是最好的安排', icon: '☯️', meaning: '当下的困惑，或许是未来的礼物。看似的失去，可能是另一种得到。', type: 'philosophy' },
-            { text: '塞翁失马，焉知非福', icon: '🐴', meaning: '眼前的得失不必太过执着，福祸相依，转机往往藏在意外之中。', type: 'philosophy' },
-            { text: '顺其自然', icon: '🌊', meaning: '强求不得，随遇而安。最好的安排正在发生。', type: 'philosophy' },
-            { text: '船到桥头自然直', icon: '🚢', meaning: '过度担忧未来只会消耗当下。水到绝境是风景，人到绝境是重生。', type: 'philosophy' },
-            { text: '跟随内心', icon: '❤️', meaning: '理智分析再多，不如听从内心的声音。', type: 'philosophy' },
-            { text: '专注当下', icon: '🎯', meaning: '过去已逝，未来未至，活在当下最重要。', type: 'philosophy' },
-            { text: '难得糊涂', icon: '😌', meaning: '太清醒的人活得太累。有时候，装傻是一种智慧。', type: 'philosophy' },
-            { text: '知足常乐', icon: '😊', meaning: '欲望是无底洞，知足才能常乐。珍惜拥有的，放下执念的。', type: 'philosophy' },
-            { text: '否极泰来', icon: '🌅', meaning: '坏到极致就会变好，黑暗之后必是黎明。坚持住，转机快到了。', type: 'philosophy' },
-            { text: '韬光养晦', icon: '💎', meaning: '光芒太盛易折，才华太露易妒。藏锋守拙，等待时机。', type: 'philosophy' },
-            { text: '知行合一', icon: '🎯', meaning: '知道和做到之间，隔着千山万水。想都是问题，做才有答案。', type: 'philosophy' },
-            { text: '上善若水', icon: '💧', meaning: '水善利万物而不争。柔软胜刚强，包容得人心。', type: 'philosophy' },
-            
-            // ===== 负面/谨慎 20%（8个）=====
-            { text: '还不是时候', icon: '⏰', meaning: '准备还不够充分，再给自己一些时间。', type: 'negative' },
-            { text: '再等等', icon: '🌙', meaning: '耐心是一种智慧。现在不是最好的时机，静候佳音。', type: 'negative' },
-            { text: '需要谨慎', icon: '⚠️', meaning: '小心驶得万年船，多观察，少行动。', type: 'negative' },
-            { text: '暂时放下', icon: '🍃', meaning: '有些东西需要放下，才能迎接更好的。顺其自然。', type: 'negative' },
-            { text: '保持现状', icon: '🛡️', meaning: '现在很好，不需要改变。稳定也是一种幸福。', type: 'negative' },
-            { text: '及时止损', icon: '✂️', meaning: '沉没成本不是成本，及时退出是明智的。', type: 'negative' },
-            { text: '改变方向', icon: '🧭', meaning: '此路不通，换个角度思考，会有新的发现。', type: 'negative' },
-            { text: '不要强求', icon: '🕊️', meaning: '属于你的终会到来，不属于你的强求不得。', type: 'negative' }
+        // 5种内耗类型
+        const burnoutTypes = {
+            perfectionist: {
+                name: '完美主义型内耗',
+                icon: '✨',
+                desc: '你对自己要求极高，怕做错、怕不够好，所以迟迟不开始。明明有能力，却被"准备不够完美"困住。',
+                solutions: [
+                    '用"先完成再完美"代替"要么不做要么做好"',
+                    '设置"垃圾时间"，允许自己产出60分的作品',
+                    '问自己：这件事1年后还重要吗？',
+                    '记录"不完美但完成了"的成功案例'
+                ],
+                book: '《完美主义扼杀效率》',
+                color: '#ff6b6b'
+            },
+            overthink: {
+                name: '过度思考型内耗',
+                icon: '🌀',
+                desc: '你的大脑像一台停不下来的跑步机，反复推演各种可能性，越想越乱，越想越累。',
+                solutions: [
+                    '设置"思考截止时间"，到点就行动',
+                    '用纸笔代替脑内循环，写下来就停',
+                    '练习正念，把注意力拉回呼吸和身体',
+                    '问自己：这个问题我现在能解决吗？'
+                ],
+                book: '《当下的力量》',
+                color: '#667eea'
+            },
+            relationship: {
+                name: '人际关系型内耗',
+                icon: '👥',
+                desc: '你过度在意别人的看法，反复回想自己说的话、别人的表情，把别人的情绪当成自己的责任。',
+                solutions: [
+                    '练习"课题分离"：这是谁的事？',
+                    '别人没问，就不给建议；别人没说，就不瞎猜',
+                    '设置"反刍时间"，每天只允许想15分钟',
+                    '问自己：这个人3年后还在我生活里吗？'
+                ],
+                book: '《被讨厌的勇气》',
+                color: '#ffd93d'
+            },
+            choice: {
+                name: '选择困难型内耗',
+                icon: '🤔',
+                desc: '小到点外卖、大到换工作，每个选择都要纠结半天，怕选错、怕后悔，最后随便选或干脆不选。',
+                solutions: [
+                    '用"5秒法则"：5秒内做决定，不给纠结时间',
+                    '设置"决策预算"，小事不花超过2分钟',
+                    '告诉自己：没有完美选择，只有选择后的努力',
+                    '练习"足够好就行"，放弃最优解执念'
+                ],
+                book: '《决断力》',
+                color: '#6bcf7f'
+            },
+            rumination: {
+                name: '反刍过去型内耗',
+                icon: '⏰',
+                desc: '你反复回想过去的错误、尴尬、遗憾，像放电影一样一遍遍折磨自己，无法活在当下。',
+                solutions: [
+                    '用"如果当时"造句，然后写下3个学到的教训',
+                    '告诉自己：当时的你已经做了最好的选择',
+                    '把遗憾写成信，然后烧掉或删掉',
+                    '练习感恩，每天记录3件当下美好的事'
+                ],
+                book: '《与自己和解》',
+                color: '#a855f7'
+            }
+        };
+
+        // 20道测试题
+        const questions = [
+            // 完美主义型 (4题)
+            {
+                text: '接到一个新任务，你通常会？',
+                dimension: 'perfectionist',
+                options: [
+                    { text: '先花大量时间做准备，怕开始得不够完美', score: 3 },
+                    { text: '会准备一下，但不会太久', score: 2 },
+                    { text: '直接开始，边做边学', score: 1 },
+                    { text: '先随便做做，不行再改', score: 0 }
+                ]
+            },
+            {
+                text: '完成的作品没有达到预期，你会？',
+                dimension: 'perfectionist',
+                options: [
+                    { text: '非常沮丧，觉得不够好就不该展示', score: 3 },
+                    { text: '有点失望，但会接受', score: 2 },
+                    { text: '没关系，完成比完美重要', score: 1 },
+                    { text: '反正做完了，就这样吧', score: 0 }
+                ]
+            },
+            {
+                text: '你对自己常说的句话是？',
+                dimension: 'perfectionist',
+                options: [
+                    { text: '"我还可以做得更好"', score: 3 },
+                    { text: '"这次做得还不错"', score: 2 },
+                    { text: '"差不多就行了"', score: 1 },
+                    { text: '"能交差就行"', score: 0 }
+                ]
+            },
+            {
+                text: '发朋友圈/作品前，你会？',
+                dimension: 'perfectionist',
+                options: [
+                    { text: '反复检查修改，犹豫很久才发', score: 3 },
+                    { text: '检查一遍，没问题就发', score: 2 },
+                    { text: '随便看看就发了', score: 1 },
+                    { text: '想发就发，从不检查', score: 0 }
+                ]
+            },
+            // 过度思考型 (4题)
+            {
+                text: '睡前大脑的状态通常是？',
+                dimension: 'overthink',
+                options: [
+                    { text: '各种想法停不下来，很难入睡', score: 3 },
+                    { text: '偶尔会想事情，但还能睡', score: 2 },
+                    { text: '很快能放空入睡', score: 1 },
+                    { text: '倒头就睡', score: 0 }
+                ]
+            },
+            {
+                text: '遇到问题时，你会？',
+                dimension: 'overthink',
+                options: [
+                    { text: '在脑子里反复推演各种可能性，越想越乱', score: 3 },
+                    { text: '想几种方案，然后选一个', score: 2 },
+                    { text: '简单想想就行动', score: 1 },
+                    { text: '不想，直接做', score: 0 }
+                ]
+            },
+            {
+                text: '别人随口说的一句话，你会？',
+                dimension: 'overthink',
+                options: [
+                    { text: '反复琢磨背后的意思，想很多', score: 3 },
+                    { text: '会想一想，但不会太久', score: 2 },
+                    { text: '听过就忘', score: 1 },
+                    { text: '完全不在意', score: 0 }
+                ]
+            },
+            {
+                text: '你的大脑通常像？',
+                dimension: 'overthink',
+                options: [
+                    { text: '停不下来的跑步机', score: 3 },
+                    { text: '偶尔加速的电动车', score: 2 },
+                    { text: '平稳行驶的汽车', score: 1 },
+                    { text: '静止的自行车', score: 0 }
+                ]
+            },
+            // 人际关系型 (4题)
+            {
+                text: '发消息给别人，半天没回，你会？',
+                dimension: 'relationship',
+                options: [
+                    { text: '反复想是不是说错话了，对方是不是生气了', score: 3 },
+                    { text: '会有点担心，但还能做别的事', score: 2 },
+                    { text: '可能在忙，等等再看', score: 1 },
+                    { text: '完全不在意', score: 0 }
+                ]
+            },
+            {
+                text: '聚会结束后，你会？',
+                dimension: 'relationship',
+                options: [
+                    { text: '反复回想自己说的话，担心说错什么', score: 3 },
+                    { text: '偶尔想起某个瞬间', score: 2 },
+                    { text: '很快就忘了', score: 1 },
+                    { text: '从不回想', score: 0 }
+                ]
+            },
+            {
+                text: '看到别人脸色不好，你会？',
+                dimension: 'relationship',
+                options: [
+                    { text: '立刻想是不是自己做错了什么', score: 3 },
+                    { text: '会猜测原因', score: 2 },
+                    { text: '可能对方自己有事', score: 1 },
+                    { text: '完全不关心', score: 0 }
+                ]
+            },
+            {
+                text: '你常常觉得？',
+                dimension: 'relationship',
+                options: [
+                    { text: '别人对我的评价很重要', score: 3 },
+                    { text: '在意亲近的人的看法', score: 2 },
+                    { text: '只在意少数人的看法', score: 1 },
+                    { text: '别人的看法跟我无关', score: 0 }
+                ]
+            },
+            // 选择困难型 (4题)
+            {
+                text: '点外卖时，你通常？',
+                dimension: 'choice',
+                options: [
+                    { text: '纠结半小时，最后随便选一个', score: 3 },
+                    { text: '看一会儿，选个差不多的', score: 2 },
+                    { text: '快速浏览，看到想吃的就点', score: 1 },
+                    { text: '每次都点一样的', score: 0 }
+                ]
+            },
+            {
+                text: '面对两个差不多的选项，你会？',
+                dimension: 'choice',
+                options: [
+                    { text: '纠结很久，怕选错后悔', score: 3 },
+                    { text: '会犹豫一下，然后选一个', score: 2 },
+                    { text: '随便选一个，差别不大', score: 1 },
+                    { text: '让别人帮我选', score: 0 }
+                ]
+            },
+            {
+                text: '买衣服时，你会？',
+                dimension: 'choice',
+                options: [
+                    { text: '反复比较颜色、款式、价格，很难决定', score: 3 },
+                    { text: '看几家，选个满意的', score: 2 },
+                    { text: '看到喜欢的就买', score: 1 },
+                    { text: '网购随便买，不合适再退', score: 0 }
+                ]
+            },
+            {
+                text: '做完选择后，你会？',
+                dimension: 'choice',
+                options: [
+                    { text: '经常后悔，想如果选另一个会怎样', score: 3 },
+                    { text: '偶尔会想另一个选择', score: 2 },
+                    { text: '选了就不想了', score: 1 },
+                    { text: '从不回头看', score: 0 }
+                ]
+            },
+            // 反刍过去型 (4题)
+            {
+                text: '夜深人静时，你常常？',
+                dimension: 'rumination',
+                options: [
+                    { text: '回想过去的尴尬事、错误，一遍遍折磨自己', score: 3 },
+                    { text: '偶尔会想起一些遗憾', score: 2 },
+                    { text: '想想今天的事，然后睡觉', score: 1 },
+                    { text: '什么都不想，直接睡着', score: 0 }
+                ]
+            },
+            {
+                text: '对于过去的错误，你会？',
+                dimension: 'rumination',
+                options: [
+                    { text: '反复责怪自己，无法原谅', score: 3 },
+                    { text: '会难过，但慢慢能放下', score: 2 },
+                    { text: '吸取教训，然后向前看', score: 1 },
+                    { text: '过去的事就让它过去', score: 0 }
+                ]
+            },
+            {
+                text: '你多久会想起过去的遗憾？',
+                dimension: 'rumination',
+                options: [
+                    { text: '经常，像放电影一样反复回放', score: 3 },
+                    { text: '偶尔，某些场景会触发', score: 2 },
+                    { text: '很少想起', score: 1 },
+                    { text: '几乎不想', score: 0 }
+                ]
+            },
+            {
+                text: '你觉得过去？',
+                dimension: 'rumination',
+                options: [
+                    { text: '有很多如果当初，经常后悔', score: 3 },
+                    { text: '有一些遗憾，但也能接受', score: 2 },
+                    { text: '过去造就了现在的我', score: 1 },
+                    { text: '过去不重要，重要的是现在', score: 0 }
+                ]
+            }
         ];
 
-        // 生成星空
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            for (let i = 0; i < 100; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.animationDelay = Math.random() * 3 + 's';
-                starsContainer.appendChild(star);
+        let currentQ = 0;
+        let scores = { perfectionist: 0, overthink: 0, relationship: 0, choice: 0, rumination: 0 };
+
+        function startTest() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQ];
+            const progress = ((currentQ + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+
+            const optionsHtml = q.options.map((opt, idx) => 
+                `<div class="option" onclick="selectOption(${idx})">${opt.text}</div>`
+            ).join('');
+
+            document.getElementById('question-area').innerHTML = `
+                <div class="question-num">问题 ${currentQ + 1}/${questions.length}</div>
+                <div class="question-text">${q.text}</div>
+                <div class="options">${optionsHtml}</div>
+            `;
+        }
+
+        function selectOption(idx) {
+            const q = questions[currentQ];
+            const selected = q.options[idx];
+            
+            scores[q.dimension] += selected.score;
+
+            document.querySelectorAll('.option')[idx].classList.add('selected');
+
+            setTimeout(() => {
+                currentQ++;
+                if (currentQ < questions.length) {
+                    showQuestion();
+                } else {
+                    showResult();
+                }
+            }, 300);
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            // 找出主要内耗类型
+            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            const mainType = burnoutTypes[sorted[0][0]];
+            
+            // 计算总分和程度
+            const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+            const maxPossible = questions.length * 3;
+            const percentage = Math.round((totalScore / maxPossible) * 100);
+            
+            let levelClass, levelText;
+            if (percentage >= 70) {
+                levelClass = 'level-high';
+                levelText = '重度内耗';
+            } else if (percentage >= 45) {
+                levelClass = 'level-mid';
+                levelText = '中度内耗';
+            } else {
+                levelClass = 'level-low';
+                levelText = '轻度内耗';
             }
+
+            // 生成维度条
+            const dimensionHtml = sorted.map(([key, score]) => {
+                const type = burnoutTypes[key];
+                const maxScore = questions.filter(q => q.dimension === key).length * 3;
+                const pct = Math.round((score / maxScore) * 100);
+                return `
+                    <div class="dimension-item">
+                        <div class="dimension-name">${type.icon} ${type.name.replace('型内耗', '')}</div>
+                        <div class="dimension-bar">
+                            <div class="dimension-fill" style="width: ${pct}%; background: ${type.color}"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 生成解决方案
+            const solutionsHtml = mainType.solutions.map(s => 
+                `<div class="solution-item">${s}</div>`
+            ).join('');
+
+            document.getElementById('result-screen').innerHTML = `
+                <div class="result-title">你的内耗类型是</div>
+                <div class="result-type">${mainType.icon} ${mainType.name}</div>
+                <div class="result-level ${levelClass}">${levelText} (${percentage}%)</div>
+                
+                <div class="result-desc">
+                    ${mainType.desc}
+                </div>
+                
+                <div class="dimension-list">
+                    <div style="color: #667eea; font-weight: bold; margin-bottom: 15px;">五维内耗分布：</div>
+                    ${dimensionHtml}
+                </div>
+                
+                <div class="solution-box">
+                    <div class="solution-title">💊 针对性解决方案</div>
+                    ${solutionsHtml}
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(102,126,234,0.2);">
+                        <strong>推荐书籍：</strong>${mainType.book}
+                    </div>
+                </div>
+                
+                <div class="share-hint">
+                    💡 截图保存结果，或分享给朋友互相监督改善
+                </div>
+                
+                <button class="btn" onclick="location.reload()">再测一次</button>
+            `;
         }
-        createStars();
-
-        // 触摸交互
-        const touchArea = document.getElementById('touchArea');
-        let pressTimer;
-        let isPressing = false;
-        const PRESS_DURATION = 3000;
-
-        function startPress(e) {
-            e.preventDefault();
-            if (isPressing) return;
-            isPressing = true;
-            touchArea.classList.add('pressing');
-            pressTimer = setTimeout(() => {
-                showAnswer();
-                endPress();
-            }, PRESS_DURATION);
-        }
-
-        function endPress() {
-            isPressing = false;
-            touchArea.classList.remove('pressing');
-            clearTimeout(pressTimer);
-        }
-
-        touchArea.addEventListener('mousedown', startPress);
-        touchArea.addEventListener('mouseup', endPress);
-        touchArea.addEventListener('mouseleave', endPress);
-        touchArea.addEventListener('touchstart', startPress);
-        touchArea.addEventListener('touchend', endPress);
-        touchArea.addEventListener('touchcancel', endPress);
-
-        function showAnswer() {
-            const randomAnswer = answers[Math.floor(Math.random() * answers.length)];
-            document.getElementById('answerIcon').textContent = randomAnswer.icon;
-            document.getElementById('answerText').textContent = randomAnswer.text;
-            document.getElementById('answerMeaning').textContent = randomAnswer.meaning;
-            document.getElementById('answerDisplay').classList.add('show');
-        }
-
-        function closeAnswer() {
-            document.getElementById('answerDisplay').classList.remove('show');
-            document.getElementById('question').value = '';
-        }
-
-        document.addEventListener('touchmove', function(e) {
-            if (isPressing) e.preventDefault();
-        }, { passive: false });
     </script>
 </body>
 </html>
